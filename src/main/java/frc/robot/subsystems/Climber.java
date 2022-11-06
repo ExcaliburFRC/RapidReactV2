@@ -28,15 +28,6 @@ public class Climber extends SubsystemBase {
     leftMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
   }
 
-  public Command emptyCommand(){
-    return new RunCommand(()-> {}, this);
-  }
-  public Command openPistonCommand() {
-    return new InstantCommand(()->piston.set(DoubleSolenoid.Value.kForward));
-  }
-  public Command closePistonCommand() {
-    return new InstantCommand(()->piston.set(DoubleSolenoid.Value.kReverse));
-  }
   public Command manualCommand(
         BooleanSupplier leftUp, BooleanSupplier leftDown,
         BooleanSupplier rightUp, BooleanSupplier rightDown,
