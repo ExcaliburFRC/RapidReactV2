@@ -4,12 +4,12 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.Drive;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -22,6 +22,7 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   private final Climber climber = new Climber();
+  private final Drive drive = new Drive();
   private final XboxController controller = new XboxController(0);
 
   private final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
@@ -37,16 +38,19 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
-  private void configureButtonBindings() {
+  public void configureButtonBindings() {
     climber.setDefaultCommand(
           climber.manualCommand(
                 () -> controller.getPOV() == 180,
                 () -> controller.getPOV() == 0,
                 () -> controller.getYButton(),
                 () -> controller.getAButton(),
-                ()-> controller.getPOV() == 90,
-                ()-> controller.getPOV() == 270
-                ));
+                () -> controller.getPOV() == 90,
+                () -> controller.getPOV() == 270));
+
+  }
+
+  public void TestMode(){
   }
 
   /**
@@ -55,7 +59,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    // An ExampleCommand will run in autonomous
     return null;
   }
 }

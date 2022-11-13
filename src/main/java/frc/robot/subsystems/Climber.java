@@ -26,6 +26,7 @@ public class Climber extends SubsystemBase {
     leftMotor.setInverted(true);
     rightMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     leftMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    leftMotor.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, false);
   }
 
   public Command manualCommand(
@@ -41,8 +42,10 @@ public class Climber extends SubsystemBase {
             else if (rightDown.getAsBoolean()) rightMotor.set(-0.5);
             else rightMotor.set(0);
 
-            if (openPiston.getAsBoolean()) piston.set(DoubleSolenoid.Value.kReverse);
-            if (closePiston.getAsBoolean()) piston.set(DoubleSolenoid.Value.kForward);
+            if (openPiston.getAsBoolean() && !piston.get().equals(DoubleSolenoid.Value.kReverse))
+              piston.set(DoubleSolenoid.Value.kReverse);
+            if (closePiston.getAsBoolean() && !piston.get().equals(DoubleSolenoid.Value.kForward))
+              piston.set(DoubleSolenoid.Value.kForward);
           }, this);
   }
 }

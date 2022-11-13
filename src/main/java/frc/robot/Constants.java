@@ -30,9 +30,6 @@ public final class Constants {
         public static final int MAX_BALLS = 2;
         public static final int FWD_CHANNEL = 3;
         public static final int REV_CHANNEL = 4;
-        public static final double HATCH_KP = 0;
-        public static final double OPEN_POS = 90;
-        public static final double CLOSE_POS = 0;
       }
     
       public static class ClimberConstants {
@@ -40,9 +37,7 @@ public final class Constants {
         public static final int REVERSE_CHANNEL = 7;
         public static final int LEFT_MOTOR_ID = 30;
         public static final int RIGHT_MOTOR_ID = 31;
-    
-        public static final float FORWARD_SOFT_LIMIT = 64.7f;
-        public static final float REVERSE_SOFT_LIMIT = 2f;
+
     
         public static final Value ANGLED = Value.kReverse;
         public static final Value STRAIGHT = Value.kForward;
@@ -54,15 +49,6 @@ public final class Constants {
         public static final int ENCODER_A = 0;
         public static final int ENCODER_B = 1;
     
-        public static final double kS = 0.10898;
-        public static final double kV = 0.065;
-        //    public static final double kA = 0.031584; // we want 0 acceleration
-        public static final double kP = 0.3;
-    
-        public static final double RATIO = 42.0 / 18.0;
-        public static final double CPR = 1024;
-        public static final double ROTATIONS_PER_PULSE = RATIO / CPR;
-    
         // 121.45182291666667;
         public static final double FENDER_SHOT_RPM = 68;
         public static final double TOLERANCE = 4;
@@ -73,23 +59,6 @@ public final class Constants {
         public static final int RIGHT_LEADER_ID = 11;
         public static final int LEFT_FOLLOWER_ID = 12;
         public static final int RIGHT_FOLLOWER_ID = 13;
-    
-        public static final double GEARING = 1.0 / 10.71;
-    
-        public static final double MOTOR_ROTATION_TO_METERS =
-            GEARING * Math.PI * Units.inchesToMeters(6);
-    
-        public static final Translation2d HUB_POS = new Translation2d(8.247, 4.092);
-    
-        public static final double kS = 0.13086;
-        public static final double kV = 2.8806;
-        public static final double kA = 0.39188;
-        public static final double kP = 0.045064;
-        public static final DifferentialDriveKinematics driveKinematics =
-            new DifferentialDriveKinematics(0.70);
-        public static final double kP_ang = 0.055;
-    
-        public static final Pose2d LOWER_FENDER = new Pose2d(7.797, 2.821, Rotation2d.fromDegrees(75));
       }
     
       public static class LedsConstants {
