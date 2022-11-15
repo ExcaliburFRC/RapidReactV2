@@ -62,12 +62,8 @@ public class Intake extends SubsystemBase {
     return new ParallelCommandGroup(
           startEndIntake().until(() ->
                 (colorSensor.getProximity() < Constants.IntakeConstants.COLOR_LIMIT &&
-
-
-                      DriverStation.getAlliance().equals(DriverStation.Alliance.Red) && colorSensor.g)
-
-
+                      DriverStation.getAlliance().equals(DriverStation.Alliance.Red))
           )
-    )
+    );
   }
 }
