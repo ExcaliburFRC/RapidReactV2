@@ -54,7 +54,6 @@ public class Drive extends SubsystemBase {
                 deadband(0.25, rotation.getAsDouble())),
           this);
   }
-
   // manual arcade drive - couldn't properly tune
 
 //  public Command arcadeDriveCommand(DoubleSupplier speed, DoubleSupplier rotation, double deadband) {
