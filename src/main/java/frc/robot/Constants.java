@@ -30,6 +30,8 @@ public final class Constants {
         public static final int MAX_BALLS = 2;
         public static final int FWD_CHANNEL = 3;
         public static final int REV_CHANNEL = 4;
+        public static final double INTAKE_SPEED = 0.6;
+        public static final double TRANSPORT_SPEED = 0.3;
       }
     
       public static class ClimberConstants {

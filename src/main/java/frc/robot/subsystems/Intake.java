@@ -5,27 +5,17 @@ import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.ColorSensorV3;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.*;
-import frc.robot.Constants;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-import java.util.function.BooleanSupplier;
+import static frc.robot.Constants.IntakeConstants;
 
 public class Intake extends SubsystemBase {
-  private int ballsQuantity;
-  ;
-  private final CANSparkMax frontMotor = new CANSparkMax(
-        Constants.IntakeConstants.INTAKE_MOTOR_ID,
-        CANSparkMaxLowLevel.MotorType.kBrushless);
-  private final CANSparkMax backMotor = new CANSparkMax(
-        Constants.IntakeConstants.UPPER_MOTOR_ID,
-        CANSparkMaxLowLevel.MotorType.kBrushless);
-  private final DoubleSolenoid piston = new DoubleSolenoid(
-        PneumaticsModuleType.CTREPCM,
-        Constants.IntakeConstants.FWD_CHANNEL,
-        Constants.IntakeConstants.REV_CHANNEL);
+  private int ballCount;
+  private final CANSparkMax frontMotor = new CANSparkMax(IntakeConstants.INTAKE_MOTOR_ID, CANSparkMaxLowLevel.MotorType.kBrushless);
+  private final CANSparkMax backMotor = new CANSparkMax(IntakeConstants.UPPER_MOTOR_ID, CANSparkMaxLowLevel.MotorType.kBrushless);
+  private final DoubleSolenoid piston = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, IntakeConstants.FWD_CHANNEL, IntakeConstants.REV_CHANNEL);
   private final ColorSensorV3 colorSensor = new ColorSensorV3(I2C.Port.kMXP);
-  private final Ultrasonic ultrasonic = new Ultrasonic(
-        Constants.IntakeConstants.UPPER_PING,
-        Constants.IntakeConstants.UPPER_ECHO);
+  private final Ultrasonic ultrasonic = new Ultrasonic(IntakeConstants.UPPER_PING, IntakeConstants.UPPER_ECHO);
 
   public Intake() {
     frontMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
@@ -35,35 +25,36 @@ public class Intake extends SubsystemBase {
     backMotor.setInverted(true);
 
     ultrasonic.setEnabled(true);
-    ballsQuantity = 1;
+    ballCount = 1;
   }
 
-  private Command startEndIntake() {
-    return new StartEndCommand(
-          () -> {
-            piston.set(DoubleSolenoid.Value.kForward);
-            frontMotor.set(0.8);
-          },
-          () -> {
-            piston.set(DoubleSolenoid.Value.kReverse);
-            frontMotor.set(0);
-          });
+  private Command incrementBallCount(int inc){
+    return new InstantCommand(()-> this.ballCount = ballCount + inc);
   }
 
-  private Command backMotorsIntake() {
-    return new StartEndCommand(() ->
-          backMotor.set(0.8),
-          () ->
-                backMotor.set(0)
-    );
+  public Command pullIntoIntake() {
+    return new FunctionalCommand(
+            ()-> piston.set(DoubleSolenoid.Value.kForward),
+            ()-> frontMotor.set(IntakeConstants.INTAKE_SPEED),
+            (__)-> frontMotor.set(0),
+            ()-> colorSensor.getProximity() < IntakeConstants.COLOR_LIMIT)
+            .andThen(incrementBallCount(1));
   }
 
-  public Command mainIntakeCommand() {
-    return new ParallelCommandGroup(
-          startEndIntake().until(() ->
-                (colorSensor.getProximity() < Constants.IntakeConstants.COLOR_LIMIT &&
-                      DriverStation.getAlliance().equals(DriverStation.Alliance.Red))
-          )
-    );
+  public Command pullIntoUpper(){
+    return new FunctionalCommand(
+            () -> {},
+            ()-> backMotor.set(IntakeConstants.TRANSPORT_SPEED),
+            (__)-> backMotor.set(0),
+            ()-> ultrasonic.getRangeMM() < IntakeConstants.SONIC_LIMIT);
+  }
+
+  public Command pullIntoShooter(Trigger ballShotTrigger){
+    return new FunctionalCommand(
+            ()-> {},
+            ()-> backMotor.set(IntakeConstants.TRANSPORT_SPEED),
+            (__) -> backMotor.set(0),
+            ballShotTrigger)
+            .andThen(incrementBallCount(-1));
   }
 }
