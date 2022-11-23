@@ -7,11 +7,8 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
-import java.util.function.BooleanSupplier;
-
 public class Intake extends SubsystemBase {
   private int ballsQuantity;
-  ;
   private final CANSparkMax frontMotor = new CANSparkMax(
         Constants.IntakeConstants.INTAKE_MOTOR_ID,
         CANSparkMaxLowLevel.MotorType.kBrushless);
@@ -38,32 +35,29 @@ public class Intake extends SubsystemBase {
     ballsQuantity = 1;
   }
 
-  private Command startEndIntake() {
-    return new StartEndCommand(
-          () -> {
-            piston.set(DoubleSolenoid.Value.kForward);
-            frontMotor.set(0.8);
-          },
-          () -> {
-            piston.set(DoubleSolenoid.Value.kReverse);
-            frontMotor.set(0);
-          });
+  public void OpenClosePiston(boolean needToOpen) {
+    if (needToOpen) piston.set(DoubleSolenoid.Value.kForward);
+    else piston.set(DoubleSolenoid.Value.kReverse);
   }
 
-  private Command backMotorsIntake() {
-    return new StartEndCommand(() ->
-          backMotor.set(0.8),
-          () ->
-                backMotor.set(0)
-    );
+  public void setFrontMotorSpeed(double speed) {
+    frontMotor.set(speed);
   }
 
-  public Command mainIntakeCommand() {
-    return new ParallelCommandGroup(
-          startEndIntake().until(() ->
-                (colorSensor.getProximity() < Constants.IntakeConstants.COLOR_LIMIT &&
-                      DriverStation.getAlliance().equals(DriverStation.Alliance.Red))
-          )
-    );
+  public void setBackMotorSpeed(double speed) {
+    backMotor.set(speed);
   }
+
+  public double getColorDis() {
+    return colorSensor.getProximity();
+  }
+
+  public double getUltrasonicDis() {
+    return ultrasonic.getRangeMM();
+  }
+
+  public boolean isOurColor(){
+    return colorSensor.getBlue() > colorSensor.getRed();
+  }
+
 }
