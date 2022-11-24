@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
-public class Intake extends SubsystemBase {
+public class Intakee extends SubsystemBase {
   private int ballsQuantity;
   private final CANSparkMax frontMotor = new CANSparkMax(
         Constants.IntakeConstants.INTAKE_MOTOR_ID,
@@ -24,7 +24,7 @@ public class Intake extends SubsystemBase {
         Constants.IntakeConstants.UPPER_PING,
         Constants.IntakeConstants.UPPER_ECHO);
 
-  public Intake() {
+  public Intakee() {
     frontMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     backMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
 
@@ -35,7 +35,7 @@ public class Intake extends SubsystemBase {
     ballsQuantity = 1;
   }
 
-  public void OpenClosePiston(boolean needToOpen) {
+  public void openClosePiston(boolean needToOpen) {
     if (needToOpen) piston.set(DoubleSolenoid.Value.kForward);
     else piston.set(DoubleSolenoid.Value.kReverse);
   }
@@ -52,12 +52,36 @@ public class Intake extends SubsystemBase {
     return colorSensor.getProximity();
   }
 
-  public double getUltrasonicDis() {
+  private double getUltrasonicDis() {
     return ultrasonic.getRangeMM();
   }
 
-  public boolean isOurColor(){
-    return colorSensor.getBlue() > colorSensor.getRed();
+  public boolean isUltraDist() {
+    return getColorDis() < Constants.IntakeConstants.SONIC_LIMIT;
   }
 
+  public Command closeIntake() {
+    return new InstantCommand(
+          () -> openClosePiston(false), this)
+          .andThen(new RunCommand(
+                () -> setBackMotorSpeed(0)));
+  }
+
+  public Command pullToUltrasonic() {
+    return new RunCommand(()-> setFrontMotorSpeed(0.5), this)
+          .andThen(() -> setFrontMotorSpeed(0))
+          .until(this::isUltraDist);
+  }
+
+  public boolean isOurColor() {
+    switch (DriverStation.getAlliance()) {
+      case Red:
+        return colorSensor.getRed() > colorSensor.getBlue();
+      case Blue:
+        return colorSensor.getBlue() > colorSensor.getRed();
+      default:
+        DriverStation.reportError(" No alliance has been found", false);
+        return false;
+    }
+  }
 }
