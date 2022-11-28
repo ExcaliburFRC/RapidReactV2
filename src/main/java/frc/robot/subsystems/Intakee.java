@@ -48,10 +48,13 @@ public class Intakee extends SubsystemBase {
     backMotor.set(speed);
   }
 
-  public double getColorDis() {
+  private double getColorDis() {
     return colorSensor.getProximity();
   }
 
+  public  boolean isColorDist(){
+    return getColorDis() > Constants.IntakeConstants.COLOR_LIMIT;
+  }
   private double getUltrasonicDis() {
     return ultrasonic.getRangeMM();
   }
@@ -63,14 +66,13 @@ public class Intakee extends SubsystemBase {
   public Command closeIntake() {
     return new InstantCommand(
           () -> openClosePiston(false), this)
-          .andThen(new RunCommand(
-                () -> setBackMotorSpeed(0)));
+          .andThen(stopFrontMotor());
   }
 
   public Command pullToUltrasonic() {
-    return new RunCommand(()-> setFrontMotorSpeed(0.5), this)
-          .andThen(() -> setFrontMotorSpeed(0))
-          .until(this::isUltraDist);
+    return new RunCommand(() -> setFrontMotorSpeed(0.5), this)
+          .until(this::isUltraDist)
+          .andThen( stopFrontMotor());
   }
 
   public boolean isOurColor() {
@@ -80,8 +82,25 @@ public class Intakee extends SubsystemBase {
       case Blue:
         return colorSensor.getBlue() > colorSensor.getRed();
       default:
-        DriverStation.reportError(" No alliance has been found", false);
+        DriverStation.reportError("No alliance has been found", false);
         return false;
     }
+  }
+
+  public FunctionalCommand ejectFromColor() {
+    return new FunctionalCommand(
+          () -> {
+          },
+          () -> this.setFrontMotorSpeed(-0.3),
+          (__) -> new WaitCommand(0.5),
+          this::isColorDist);
+  }
+
+  public Command stopFrontMotor() {
+    return new InstantCommand(() -> frontMotor.set(0));
+  }
+
+  public Command stopBackMotor() {
+    return new InstantCommand(() -> backMotor.set(0));
   }
 }
