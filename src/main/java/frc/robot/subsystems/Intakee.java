@@ -60,7 +60,7 @@ public class Intakee extends SubsystemBase {
   }
 
   public boolean isUltraDist() {
-    return getColorDis() < Constants.IntakeConstants.SONIC_LIMIT;
+    return this.ultrasonic.getRangeMM() < Constants.IntakeConstants.SONIC_LIMIT;
   }
 
   public Command closeIntake() {
@@ -87,13 +87,17 @@ public class Intakee extends SubsystemBase {
     }
   }
 
-  public FunctionalCommand ejectFromColor() {
+  public FunctionalCommand ejectFromColorCommand() {
     return new FunctionalCommand(
           () -> {
           },
           () -> this.setFrontMotorSpeed(-0.3),
           (__) -> new WaitCommand(0.5),
           this::isColorDist);
+  }
+
+  public boolean intakeFull(){
+    return isColorDist() && isUltraDist() && isOurColor();
   }
 
   public Command stopFrontMotor() {
