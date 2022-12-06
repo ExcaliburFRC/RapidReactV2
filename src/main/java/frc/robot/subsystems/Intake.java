@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.Constants;
 
-public class Intakee extends SubsystemBase {
+public class Intake extends SubsystemBase {
   private int ballsQuantity;
   private final CANSparkMax frontMotor = new CANSparkMax(
         Constants.IntakeConstants.INTAKE_MOTOR_ID,
@@ -24,7 +24,7 @@ public class Intakee extends SubsystemBase {
         Constants.IntakeConstants.UPPER_PING,
         Constants.IntakeConstants.UPPER_ECHO);
 
-  public Intakee() {
+  public Intake() {
     frontMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
     backMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
 
