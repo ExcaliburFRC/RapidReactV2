@@ -9,7 +9,6 @@ import java.util.function.BooleanSupplier;
 
 public class Superstructure {
   private final Intake intake = new Intake();
-  private final Shooter shooter = new Shooter();
 
 // option a - David Arownowitz
 //  public Command intakeBallsCommand() {
