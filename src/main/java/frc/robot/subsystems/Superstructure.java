@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 public class Superstructure {
-  private final Intakee intake = new Intakee();
+  private final Intake intake = new Intake();
   private final Shooter shooter = new Shooter();
 
 // option a - David Arownowitz
