@@ -5,56 +5,106 @@ import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.ColorSensorV3;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.*;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-
-import static frc.robot.Constants.IntakeConstants;
+import frc.robot.Constants;
 
 public class Intake extends SubsystemBase {
-  private int ballCount;
-  private final CANSparkMax frontMotor = new CANSparkMax(IntakeConstants.INTAKE_MOTOR_ID, CANSparkMaxLowLevel.MotorType.kBrushless);
-  private final CANSparkMax backMotor = new CANSparkMax(IntakeConstants.UPPER_MOTOR_ID, CANSparkMaxLowLevel.MotorType.kBrushless);
-  private final DoubleSolenoid piston = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, IntakeConstants.FWD_CHANNEL, IntakeConstants.REV_CHANNEL);
-  private final ColorSensorV3 colorSensor = new ColorSensorV3(I2C.Port.kMXP);
-  private final Ultrasonic ultrasonic = new Ultrasonic(IntakeConstants.UPPER_PING, IntakeConstants.UPPER_ECHO);
+    private int ballsQuantity;
+    private final CANSparkMax frontMotor = new CANSparkMax(
+            Constants.IntakeConstants.INTAKE_MOTOR_ID,
+            CANSparkMaxLowLevel.MotorType.kBrushless);
+    private final CANSparkMax backMotor = new CANSparkMax(
+            Constants.IntakeConstants.UPPER_MOTOR_ID,
+            CANSparkMaxLowLevel.MotorType.kBrushless);
+    private final DoubleSolenoid piston = new DoubleSolenoid(
+            PneumaticsModuleType.CTREPCM,
+            Constants.IntakeConstants.FWD_CHANNEL,
+            Constants.IntakeConstants.REV_CHANNEL);
+    private final ColorSensorV3 colorSensor = new ColorSensorV3(I2C.Port.kMXP);
+    private final Ultrasonic ultrasonic = new Ultrasonic(
+            Constants.IntakeConstants.UPPER_PING,
+            Constants.IntakeConstants.UPPER_ECHO);
 
-  public Intake() {
-    frontMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    backMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+    public Intake() {
+        frontMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+        backMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
 
-    frontMotor.setInverted(true);
-    backMotor.setInverted(true);
+        frontMotor.setInverted(true);
+        backMotor.setInverted(true);
 
-    ultrasonic.setEnabled(true);
-    ballCount = 1;
-  }
+        ultrasonic.setEnabled(true);
+        ballsQuantity = 1;
+    }
 
-  private Command incrementBallCount(int inc){
-    return new InstantCommand(()-> this.ballCount = ballCount + inc);
-  }
+    public void openClosePiston(boolean needToOpen) {
+        if (needToOpen) piston.set(DoubleSolenoid.Value.kForward);
+        else piston.set(DoubleSolenoid.Value.kReverse);
+    }
 
-  public Command pullIntoIntake() {
-    return new FunctionalCommand(
-            ()-> piston.set(DoubleSolenoid.Value.kForward),
-            ()-> frontMotor.set(IntakeConstants.INTAKE_SPEED),
-            (__)-> frontMotor.set(0),
-            ()-> colorSensor.getProximity() < IntakeConstants.COLOR_LIMIT)
-            .andThen(incrementBallCount(1));
-  }
+    public void setFrontMotorSpeed(double speed) {
+        frontMotor.set(speed);
+    }
 
-  public Command pullIntoUpper(){
-    return new FunctionalCommand(
-            () -> {},
-            ()-> backMotor.set(IntakeConstants.TRANSPORT_SPEED),
-            (__)-> backMotor.set(0),
-            ()-> ultrasonic.getRangeMM() < IntakeConstants.SONIC_LIMIT);
-  }
+    public void setBackMotorSpeed(double speed) {
+        backMotor.set(speed);
+    }
 
-  public Command pullIntoShooter(Trigger ballShotTrigger){
-    return new FunctionalCommand(
-            ()-> {},
-            ()-> backMotor.set(IntakeConstants.TRANSPORT_SPEED),
-            (__) -> backMotor.set(0),
-            ballShotTrigger)
-            .andThen(incrementBallCount(-1));
-  }
+    private double getColorDis() {
+        return colorSensor.getProximity();
+    }
+
+    public boolean isColorDist() {
+        return getColorDis() > Constants.IntakeConstants.COLOR_LIMIT;
+    }
+
+    private double getUltrasonicDis() {
+        return ultrasonic.getRangeMM();
+    }
+
+    public boolean isUltraDist() {
+        return this.ultrasonic.getRangeMM() < Constants.IntakeConstants.SONIC_LIMIT;
+    }
+
+    public Command closeIntake() {
+        return new InstantCommand(
+                () -> openClosePiston(false), this)
+                .andThen(stopFrontMotor());
+    }
+
+    public Command pullToUltrasonic() {
+        return new RunCommand(() -> setFrontMotorSpeed(0.5), this)
+                .until(this::isUltraDist)
+                .andThen(stopFrontMotor());
+    }
+
+    public boolean isOurColor() {
+        switch (DriverStation.getAlliance()) {
+            case Red:
+                return colorSensor.getRed() > colorSensor.getBlue();
+            case Blue:
+                return colorSensor.getBlue() > colorSensor.getRed();
+            default:
+                DriverStation.reportError("No alliance has been found", false);
+                return false;
+        }
+    }
+
+    public FunctionalCommand ejectFromColorCommand() {
+        return new FunctionalCommand(
+                () -> {},
+                () -> this.setFrontMotorSpeed(-0.3),
+                (__) -> new WaitCommand(0.5).andThen(stopFrontMotor()),
+                ()-> !isColorDist());
+    }
+
+    public boolean intakeFull() {
+        return isColorDist() && isUltraDist() && isOurColor();
+    }
+
+    public Command stopFrontMotor() {
+        return new InstantCommand(() -> frontMotor.set(0));
+    }
+
+    public Command stopBackMotor() {
+        return new InstantCommand(() -> backMotor.set(0));
+    }
 }
