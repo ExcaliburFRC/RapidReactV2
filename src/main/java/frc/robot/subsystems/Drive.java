@@ -46,12 +46,20 @@ public class Drive extends SubsystemBase {
   private double deadband(double deadband, double value) {
     return value < deadband && value > -deadband ? 0 : value;
   }
+//
+//  public Command arcadeDriveCommand(DoubleSupplier speed, DoubleSupplier rotation) {
+//    return new RunCommand(() ->
+//          drive.arcadeDrive(
+//                deadband(0.25, speed.getAsDouble()),
+//                deadband(0.25, rotation.getAsDouble())),
+//          this);
+//  }
 
   public Command arcadeDriveCommand(DoubleSupplier speed, DoubleSupplier rotation) {
     return new RunCommand(() ->
           drive.arcadeDrive(
-                deadband(0.25, speed.getAsDouble()),
-                deadband(0.25, rotation.getAsDouble())),
+                speed.getAsDouble(),
+                rotation.getAsDouble()),
           this);
   }
   // manual arcade drive - couldn't properly tune

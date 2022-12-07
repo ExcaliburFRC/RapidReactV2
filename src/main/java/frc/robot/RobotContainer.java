@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -25,8 +26,10 @@ public class RobotContainer {
    */
   private final Climber climber = new Climber();
   private final Drive drive = new Drive();
-  private final PS4Controller controller = new PS4Controller(0);
   private final Intake intake = new Intake();
+
+  private final PS4Controller controller = new PS4Controller(0);
+  private final Joystick secondaryController = new Joystick(1);
 
   private final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
 
@@ -51,11 +54,15 @@ public class RobotContainer {
                 () -> controller.getPOV() == 90,
                 () -> controller.getPOV() == 270));
 
-    drive.setDefaultCommand(drive.arcadeDriveCommand(()-> -controller.getLeftY(), controller::getRightX));
+    drive.arcadeDriveCommand(()-> -secondaryController.getY(), secondaryController::getX).schedule();
 
-    new Button(controller::getL2ButtonPressed).toggleWhenPressed(intake.pullToColorCommand()
-          .andThen(intake.pullToUltrasonic()));
-    new Button(controller::getL1ButtonPressed).toggleWhenPressed(intake.ejectBallsCommand());
+    new Button(()-> secondaryController.getRawButton(1))
+          .toggleWhenPressed(new SequentialCommandGroup(
+                intake.pullToColorCommand(),
+                intake.pullToUltrasonic(),
+                intake.pullToColorCommand()));
+
+    new Button(()-> secondaryController.getRawButton(3)).toggleWhenPressed(intake.ejectBallsCommand());
   }
 
   public void TestMode(){
