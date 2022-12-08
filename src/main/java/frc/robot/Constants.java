@@ -50,7 +50,8 @@ public final class Constants {
         public static final int FOLLOWER_ID = 21;
         public static final int ENCODER_A = 0;
         public static final int ENCODER_B = 1;
-    
+        public static final int CURRENT_LIMIT = 50;
+
         // 121.45182291666667;
         public static final double FENDER_SHOT_RPM = 68;
         public static final double TOLERANCE = 4;

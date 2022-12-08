@@ -6,13 +6,11 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.Climber;
-import frc.robot.subsystems.Drive;
-import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.*;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -26,9 +24,9 @@ public class RobotContainer {
    */
   private final Climber climber = new Climber();
   private final Drive drive = new Drive();
-  private final Intake intake = new Intake();
+  private final Superstructure superstructure = new Superstructure();
 
-  private final PS4Controller controller = new PS4Controller(0);
+//  private final PS4Controller controller = new PS4Controller(0);
   private final Joystick secondaryController = new Joystick(1);
 
   private final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
@@ -45,24 +43,20 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   public void configureButtonBindings() {
-    climber.setDefaultCommand(
-          climber.manualCommand(
-                () -> controller.getPOV() == 0,
-                () -> controller.getPOV() == 180,
-                () -> controller.getTriangleButton(),
-                () -> controller.getCrossButton(),
-                () -> controller.getPOV() == 90,
-                () -> controller.getPOV() == 270));
+//    climber.setDefaultCommand(
+//          climber.manualCommand(
+//                () -> controller.getPOV() == 0,
+//                () -> controller.getPOV() == 180,
+//                () -> controller.getTriangleButton(),
+//                () -> controller.getCrossButton(),
+//                () -> controller.getPOV() == 90,
+//                () -> controller.getPOV() == 270));
 
     drive.arcadeDriveCommand(()-> -secondaryController.getY(), secondaryController::getX).schedule();
 
-    new Button(()-> secondaryController.getRawButton(1))
-          .toggleWhenPressed(new SequentialCommandGroup(
-                intake.pullToColorCommand(),
-                intake.pullToUltrasonic(),
-                intake.pullToColorCommand()));
-
-    new Button(()-> secondaryController.getRawButton(3)).toggleWhenPressed(intake.ejectBallsCommand());
+    new Button(()-> secondaryController.getRawButton(1)).toggleWhenPressed(superstructure.intakeBallsCommand());
+    new Button(()-> secondaryController.getRawButton(3)).toggleWhenPressed(superstructure.intake.ejectBallsCommand());
+    new Button(()-> secondaryController.getRawButton(2)).toggleWhenPressed(superstructure.shootCommand());
   }
 
   public void TestMode(){

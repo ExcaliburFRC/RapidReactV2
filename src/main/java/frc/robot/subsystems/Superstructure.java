@@ -7,7 +7,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
+
 public class Superstructure {
+  public final Intake intake = new Intake();
+  public final Shooter shooter = new Shooter();
+
 //  private final Intake intake = new Intake();
 
 // option a - David Arownowitz
@@ -20,7 +24,7 @@ public class Superstructure {
 //                            // deciding by whether the ball is our color
 //                            new ConditionalCommand(
 //                                  // whether the ultrasonic detects a ball
-//                                  intake.closeIntake()
+//                                  intake.closeIntakeCommand()
 //                                        .andThen(new RunCommand(()-> {})),
 //                                  intake.pullToUltrasonic(),
 //                                  intake::isUltraDist),
@@ -49,7 +53,7 @@ public class Superstructure {
 //                            // deciding by whether the ball is our color
 //                            new ConditionalCommand(
 //                                  // whether the ultrasonic detects a ball
-//                                  intake.closeIntake()
+//                                  intake.closeIntakeCommand()
 //                                        .andThen(new InstantCommand(()-> intakeFull.set(true))),
 //                                  intake.pullToUltrasonic(),
 //                                  intake::isUltraDist),
@@ -68,31 +72,34 @@ public class Superstructure {
 //  }
 
   // option c
-//    public Command intakeBallsCommand() {
-//    return new InstantCommand(
-//          () -> intake.openClosePiston(true))
-//          .andThen(
-//                new RepeatingCommand(
-//                      new ConditionalCommand(
-//                            // deciding by whether the ball is our color
-//                            new ConditionalCommand(
-//                                  // whether the ultrasonic detects a ball
-//                                  intake.closeIntake()
-//                                        .andThen(new RunCommand(()-> {})),
-//                                  intake.pullToUltrasonic(),
-//                                  intake::isUltraDist),
-//                            new ConditionalCommand(
-//                                  // whether we want to eject from intake or from shooter
-//                                  intake.ejectFromColorCommand(),
-//                                  new RunCommand(() -> {
-//                                    intake.setFrontMotorSpeed(0.3);
-//                                    // TODO call the low shooter eject command
-//                                  })
-//                                        .until(() -> intake.isUltraDist())
-//                                        .andThen(() -> intake.stopBackMotor())
-//                                  /* TODO .andThen(stopShootMotorCommand*/,
-//                                  intake::isUltraDist),
-//                            intake::isOurColor))
-//                      .until(intake::intakeFull));
-//  }
+  public Command intakeBallsCommand() {
+    return new RepeatingCommand(
+          intake.pullToColorCommand()
+                .andThen(
+                      new ConditionalCommand(
+                            // deciding by whether the ball is our color
+                            new ConditionalCommand(
+                                  // whether the ultrasonic detects a ball
+                                  intake.closeIntakeCommand()
+                                        .andThen(new RunCommand(() -> {
+                                        })),
+                                  intake.pullToUltrasonicCommand(),
+                                  intake.sonicTrigger),
+                            new ConditionalCommand(
+                                  // whether we want to eject from intake or from shooter
+                                  intake.ejectFromColorCommand(),
+                                  shootCommand(true),
+                                  intake.sonicTrigger),
+                            intake::isOurColor)))
+          .until(() -> (intake.ballCount.get() == 2 && intake.isOurColor()));
+  }
+
+  public Command shootCommand(){
+    return shootCommand(false);
+  }
+  public Command shootCommand(boolean lowShoot) {
+    return intake.pullToShooterCommand((() -> shooter.ballShotTrigger))
+          .alongWith(shooter.accelerateShooterCommand(lowShoot))
+          .until(()-> intake.ballCount.get() == 0);
+  }
 }

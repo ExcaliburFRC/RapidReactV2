@@ -8,10 +8,13 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+
 import static frc.robot.Constants.IntakeConstants.*;
 
 public class Intake extends SubsystemBase {
-  private int ballsQuantity;
+  public final AtomicInteger ballCount = new AtomicInteger(0);
   private final CANSparkMax frontMotor = new CANSparkMax(
         INTAKE_MOTOR_ID,
         CANSparkMaxLowLevel.MotorType.kBrushless);
@@ -27,8 +30,10 @@ public class Intake extends SubsystemBase {
         UPPER_PING,
         UPPER_ECHO);
 
-  private Trigger colorTrigger = new Trigger(() -> colorSensor.getProximity() > COLOR_LIMIT);
-  private Trigger sonicTrigger = new Trigger(() -> ultrasonic.getRangeMM() < SONIC_LIMIT).debounce(0.2);
+  public Trigger colorTrigger = new Trigger(() -> colorSensor.getProximity() > COLOR_LIMIT);
+  public Trigger sonicTrigger = new Trigger(() -> ultrasonic.getRangeMM() < SONIC_LIMIT).debounce(0.2);
+
+
 
   public Intake() {
     frontMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
@@ -39,18 +44,17 @@ public class Intake extends SubsystemBase {
 
     ultrasonic.setEnabled(true);
     Ultrasonic.setAutomaticMode(true);
-    ballsQuantity = 1;
   }
 
-  private void openClosePiston(boolean needToOpen) {
+  void openClosePiston(boolean needToOpen) {
     if (needToOpen) piston.set(DoubleSolenoid.Value.kForward);
     else piston.set(DoubleSolenoid.Value.kReverse);
   }
 
-  public Command closeIntake() {
+  public Command closeIntakeCommand() {
     return new InstantCommand(
           () -> openClosePiston(false), this)
-          .andThen(stopFrontMotor());
+          .andThen(stopFrontMotorCommand());
   }
 
   public Command pullToColorCommand() {
@@ -58,10 +62,12 @@ public class Intake extends SubsystemBase {
           () -> openClosePiston(true),
           () -> frontMotor.set(0.3),
           (__) -> frontMotor.set(0),
-          colorTrigger.debounce(0.1));
+          colorTrigger.debounce(0.1),
+          this)
+          .andThen(new InstantCommand(()-> ballCount.incrementAndGet()));
   }
 
-  public Command pullToUltrasonic() {
+  public Command pullToUltrasonicCommand() {
     return new StartEndCommand(
           ()-> {
             frontMotor.set(0.3);
@@ -74,31 +80,36 @@ public class Intake extends SubsystemBase {
           .until(sonicTrigger);
   }
 
-  public Command pullToShooter() {
-    return new RunCommand(() -> backMotor.set(0.1))
-          .until(sonicTrigger.negate());
+  public Command pullToShooterCommand(BooleanSupplier ballShotTrigger) {
+    return new RunCommand(() -> backMotor.set(0.35), this)
+          .until(ballShotTrigger)
+          .andThen(new InstantCommand(()-> backMotor.set(0)))
+          .andThen(new InstantCommand(()-> ballCount.decrementAndGet()));
   }
 
   public Command ejectFromColorCommand() {
     return new FunctionalCommand(
-          () -> {
-          },
+          () -> {},
           () -> frontMotor.set(-0.3),
-          (__) -> frontMotor.set(0),
-          colorTrigger.negate().debounce(0.75));
+          (__) -> {
+            frontMotor.set(0);
+            ballCount.decrementAndGet();
+            },
+          colorTrigger.negate().debounce(0.75),
+          this);
   }
 
   public Command ejectFromUltrasonicCommand() {
     return new FunctionalCommand(
-          () -> {
-          },
+          () -> {},
           () -> backMotor.set(-0.3),
           (__) -> backMotor.set(0),
-          colorTrigger);
+          colorTrigger,
+          this);
   }
 
   public Command ejectBallsCommand() {
-    return new InstantCommand(()-> openClosePiston(true))
+    return new InstantCommand(()-> openClosePiston(true), this)
     .andThen(
           new ConditionalCommand(
           new ConditionalCommand(
@@ -107,7 +118,8 @@ public class Intake extends SubsystemBase {
                 colorTrigger)
                 .andThen(ejectFromUltrasonicCommand().andThen(ejectFromColorCommand())),
           new InstantCommand(() -> {}),
-          sonicTrigger), new InstantCommand(()-> openClosePiston(false)));
+          sonicTrigger), new InstantCommand(()-> openClosePiston(false)))
+          .andThen(new InstantCommand(()-> ballCount.set(0)));
   }
 
   public boolean isOurColor() {
@@ -123,25 +135,21 @@ public class Intake extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
-    System.out.println(CommandScheduler.getInstance().requiring(this));
-  }
-
-  @Override
   public void initSendable(SendableBuilder builder) {
     builder.addBooleanProperty("sonic trigger: ", ()-> sonicTrigger.get(), null);
     builder.addBooleanProperty("color trigger: ", ()-> colorTrigger.get(), null);
+    builder.addDoubleProperty("ballCount", ()-> ballCount.get(), null);
   }
 
-  public boolean intakeFull() {
-    return colorTrigger.and(sonicTrigger).get() && isOurColor();
+  public Command setFrontMotorCommand(double speed) {
+    return new RunCommand(() -> frontMotor.set(speed), this);
   }
 
-  private Command stopFrontMotor() {
-    return new InstantCommand(() -> frontMotor.set(0));
+  public Command stopFrontMotorCommand() {
+    return new InstantCommand(() -> frontMotor.set(0), this);
   }
 
-  private Command stopBackMotor() {
-    return new InstantCommand(() -> backMotor.set(0));
+  public Command stopBackMotorCommand() {
+    return new InstantCommand(() -> backMotor.set(0), this);
   }
 }
