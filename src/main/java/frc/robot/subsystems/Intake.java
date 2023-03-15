@@ -53,7 +53,11 @@ public class Intake extends SubsystemBase {
 
   public Command closeIntakeCommand() {
     return new InstantCommand(
-          () -> openClosePiston(false), this)
+          () -> {
+            openClosePiston(false);
+            frontMotor.set(0);
+            backMotor.set(0);
+          }, this)
           .andThen(stopFrontMotorCommand());
   }
 
@@ -81,9 +85,15 @@ public class Intake extends SubsystemBase {
   }
 
   public Command pullToShooterCommand(BooleanSupplier ballShotTrigger) {
-    return new RunCommand(() -> backMotor.set(0.35), this)
+    return new RunCommand(() -> {
+      backMotor.set(0.35);
+      frontMotor.set(0.35);},
+          this)
           .until(ballShotTrigger)
-          .andThen(new InstantCommand(()-> backMotor.set(0)))
+          .andThen(new InstantCommand(()-> {
+            backMotor.set(0);
+            frontMotor.set(0);
+          }))
           .andThen(new InstantCommand(()-> ballCount.decrementAndGet()));
   }
 
@@ -113,13 +123,16 @@ public class Intake extends SubsystemBase {
     .andThen(
           new ConditionalCommand(
           new ConditionalCommand(
-                      ejectFromColorCommand(),
+                ejectFromColorCommand(),
                 new InstantCommand(()-> {}),
                 colorTrigger)
-                .andThen(ejectFromUltrasonicCommand().andThen(ejectFromColorCommand())),
+                .andThen(
+                      ejectFromUltrasonicCommand()
+                            .andThen(ejectFromColorCommand())),
           new InstantCommand(() -> {}),
-          sonicTrigger), new InstantCommand(()-> openClosePiston(false)))
-          .andThen(new InstantCommand(()-> ballCount.set(0)));
+          sonicTrigger),
+          new InstantCommand(()-> openClosePiston(false)),
+          new InstantCommand(()-> ballCount.set(0)));
   }
 
   public boolean isOurColor() {
@@ -139,6 +152,11 @@ public class Intake extends SubsystemBase {
     builder.addBooleanProperty("sonic trigger: ", ()-> sonicTrigger.get(), null);
     builder.addBooleanProperty("color trigger: ", ()-> colorTrigger.get(), null);
     builder.addDoubleProperty("ballCount", ()-> ballCount.get(), null);
+  }
+
+  @Override
+  public void periodic() {
+    System.out.println(CommandScheduler.getInstance().requiring(this));
   }
 
   public Command setFrontMotorCommand(double speed) {

@@ -4,9 +4,7 @@ import edu.wpi.first.wpilibj2.command.*;
 import lib.RepeatingCommand;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
-
 
 public class Superstructure {
   public final Intake intake = new Intake();
@@ -80,9 +78,7 @@ public class Superstructure {
                             // deciding by whether the ball is our color
                             new ConditionalCommand(
                                   // whether the ultrasonic detects a ball
-                                  intake.closeIntakeCommand()
-                                        .andThen(new RunCommand(() -> {
-                                        })),
+                                  intake.closeIntakeCommand(),
                                   intake.pullToUltrasonicCommand(),
                                   intake.sonicTrigger),
                             new ConditionalCommand(
@@ -94,12 +90,15 @@ public class Superstructure {
           .until(() -> (intake.ballCount.get() == 2 && intake.isOurColor()));
   }
 
-  public Command shootCommand(){
+  public Command shootCommand() {
     return shootCommand(false);
   }
+
   public Command shootCommand(boolean lowShoot) {
-    return intake.pullToShooterCommand((() -> shooter.ballShotTrigger))
-          .alongWith(shooter.accelerateShooterCommand(lowShoot))
-          .until(()-> intake.ballCount.get() == 0);
+    return shooter.accelerateShooterCommand(lowShoot)
+          .alongWith(new RepeatingCommand(
+                new WaitCommand(0.45)
+                      .andThen(intake.pullToShooterCommand((() -> shooter.ballShotTrigger)
+                      )))).until(()-> intake.ballCount.get() == 0);
   }
 }

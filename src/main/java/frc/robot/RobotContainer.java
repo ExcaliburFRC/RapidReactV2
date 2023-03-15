@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -54,7 +55,10 @@ public class RobotContainer {
 
     drive.arcadeDriveCommand(()-> -secondaryController.getY(), secondaryController::getX).schedule();
 
-    new Button(()-> secondaryController.getRawButton(1)).toggleWhenPressed(superstructure.intakeBallsCommand());
+    new Button(()-> CommandScheduler.getInstance().requiring(superstructure.intake) != null)
+          .whenReleased(superstructure.intake.closeIntakeCommand());
+
+    new Button(()-> secondaryController.getRawButton(1)).toggleWhenActive(superstructure.intakeBallsCommand());
     new Button(()-> secondaryController.getRawButton(3)).toggleWhenPressed(superstructure.intake.ejectBallsCommand());
     new Button(()-> secondaryController.getRawButton(2)).toggleWhenPressed(superstructure.shootCommand());
   }
